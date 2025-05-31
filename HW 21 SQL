@@ -1,0 +1,122 @@
+
+CREATE TABLE users(
+  "id" SERIAL PRIMARY KEY,
+  "full_name" VARCHAR(50),
+  "email" VARCHAR(50) UNIQUE,
+  "age" INT
+);
+
+CREATE TABLE jobs(
+  "id" SERIAL PRIMARY KEY,
+  "title" VARCHAR(100),
+  "salary" DECIMAL(10,2),
+  "is_active" BOOLEAN DEFAULT TRUE,
+  "status" VARCHAR(50) DEFAULT 'draft'
+);
+
+CREATE TABLE applications(
+  "id" SERIAL PRIMARY KEY,
+  "user_id" INT REFERENCES users(id),
+  "job_id" INT REFERENCES jobs(id),
+  "status" VARCHAR(50) DEFAULT 'draft',
+  "aplied_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1.Добавил нового пользователя по имени Nikita Belov, возраст 24, email: belov@site.com.
+INSERT INTO users(full_name, email, age)
+VALUES ('Nikita Belov', 'belov@site.com', '24');
+
+-- 2.Добавил 5 новых вакансий с разными названиями и зарплатами.
+INSERT INTO jobs(title, salary)
+VALUES
+('auditor', 100000),
+('recruter', 800000),
+('it auditor', 150000),
+('driver', 30000),
+('interpreter', 60000);
+
+-- 3.Добавил заявку от пользователя с id = 2 на вакансию с id = 1 со статусом 'submitted'.
+INSERT INTO applications (user_id, job_id, status)
+VALUES (2,1, 'submitted');
+
+
+-- 4.Сделай массовую вставку: 3 пользователей сразу (можно выдуманные имена и email).
+INSERT INTO users(full_name, email, age)
+VALUES
+('Daniel Nurlanbekov', 'daniel.nurlanbekov@gmail.com', 30),
+('Diana Nurlanbekov', 'diana.nurlanbekov@gmail.com', 25),
+('Erlan Nurlanbekov', 'erlan.nurlanbekov@gmail.com', 58);
+
+-- 5.Вставил все активные вакансии в таблицу jobs, изменив только зарплату (умножил на 1.1).
+CREATE TABLE vacancies (
+    id SERIAL PRIMARY KEY,
+    title TEXT,
+    salary NUMERIC(10,2),
+    status TEXT
+);
+
+INSERT INTO vacancies(title, salary, status)
+VALUES
+('HR manager', 150000, 'active'),
+('accounter', 100000, 'none'),
+('PR manager', 110000, 'active');
+
+INSERT INTO jobs (title, salary, status)
+SELECT title, salary * 1.1, status
+FROM vacancies
+WHERE status = 'active';
+
+-- 6.Увеличил возраст всех пользователей старше 30 лет на 1 год.
+UPDATE users
+SET age = age + 1
+WHERE age = 30;
+
+-- 7.Поменял всем email с @gmail.com на @protonmail.com.
+UPDATE users
+SET email = REGEXP_REPLACE(email, '@gmail\.com$', '@protonmail.com')
+WHERE email LIKE '%@gmail.com';
+
+-- 8.Добавил к фамилии " (уволен)" всем пользователям старше 50 лет.
+UPDATE users
+SET full_name = full_name || '(уволен)'
+WHERE age > 50;
+
+-- 9.Обнулил зарплату у всех вакансий, где is_active = false.
+INSERT INTO jobs (title, salary, is_active, status) VALUES ('security', 40000, False, 'draft');
+UPDATE jobs
+SET salary = 0
+WHERE is_active = False;
+
+-- 10.Изменил статус на 'archived' у всех заявок, сделанных более 30 дней назад (используй NOW()).
+UPDATE applications
+SET status = 'archived'
+WHERE aplied_at < NOW() - INTERVAL '30 days';
+
+-- 11.Присвоил пользователям статус:
+ALTER TABLE users
+ADD COLUMN status VARCHAR(10);
+
+UPDATE users
+SET status = CASE
+  WHEN age < 25 THEN 'junior'
+  WHEN age BETWEEN 25 AND 35 THEN 'middle'
+  WHEN age > 35 THEN 'senior'
+  ELSE status
+END;
+
+-- 12.Удалил всех пользователей младше 18 лет.
+DELETE FROM users
+WHERE age<18;
+
+-- 13.Удалить заявки, у которых статус 'draft'.
+DELETE FROM applications
+WHERE status = 'draft';
+
+-- 14.Удалить вакансии, у которых нет откликов
+DELETE FROM vacancies
+WHERE id NOT IN (SELECT job_id FROM applications);
+
+-- 15.Удалить пользователей, у которых email заканчивается на .ru.
+DELETE FROM users
+WHERE email LIKE '%.ru';
+
